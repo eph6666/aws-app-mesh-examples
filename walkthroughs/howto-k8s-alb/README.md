@@ -1,19 +1,20 @@
-## Overview
-This example shows how to use [ALB Ingress Controller](https://github.com/kubernetes-sigs/aws-alb-ingress-controller) with targets registered as virtual-nodes under App Mesh.
+## 概述
+
+本示例会说明如何将App Mesh的虚拟节点(vitual-nodes)注册为[ALB Ingress Controller](https://github.com/kubernetes-sigs/aws-alb-ingress-controller)的目标。
 
 ![System Diagram](./howto-k8s-alb.png "System Diagram")
 
-## Prerequisites
+## 前置条件
 - [Walkthrough: App Mesh with EKS](../eks/)
-- [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/)
-- Install Docker. It is needed to build the demo application images.
+- [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v1.1/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller)
+- 安装Docker。 示例需要构建演示应用的Docker image。
 
-Note: Only [deploy the ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller) and rest this example service will replace the echoserver in the ALB Ingress Controller link provider
+注意: 只需要部署 [ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v1.1/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller)，示例中服务将替换ALB Ingress Controller链接中的echoserver
 
-## Setup
+## 配置
 
-1. Clone this repository and navigate to the walkthrough/howto-k8s-alb folder, all commands will be run from this location
-2. **Your** account id:
+1. 克隆此仓库，然后进入`walkthrough/howto-k8s-alb`文件夹，所有的命令都是在此文件夹下运行。
+2. **你的** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
@@ -21,21 +22,21 @@ Note: Only [deploy the ALB Ingress Controller](https://kubernetes-sigs.github.io
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
-5. Deploy
+4. **(可选项) 指定 Envoy Image 版本** 如果要使用与[默认版本](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration)不同的Envoy 容器镜像，运行 `helm upgrade` 去覆盖 `sidecar.image.repository` 和 `sidecar.image.tag` 字段。
+5. 部署
     ```.
     ./deploy.sh
     ```
 
-## Usage
+## 使用
 
-Check the events of the ingress to see what has occur.
+检查Ingress的事件，查看变化。
 
     ```
     kubectl describe ing -n howto-k8s-alb color
     ```
 
-You should see similar to the following.
+您应该会看到类似于以下内容。
 
     ```
     Name:             color
@@ -61,13 +62,13 @@ You should see similar to the following.
       Normal  MODIFY  4m12s  alb-ingress-controller  rule 1 modified with conditions [{    Field: "path-pattern",    PathPatternConfig: {      Values: ["/color"]    }  }]
      ```
 
-To check if the application is reachable via ALB Ingress Controller
+检查是否可以通过ALB Ingress Controller访问该应用程序。
 
 ```
 curl -v 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com/color
 ```
 
-You should see similar to the following.
+您应该看到类似于以下内容。
 
 ```
 *   Trying 34.208.158.34...
