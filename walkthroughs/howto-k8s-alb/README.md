@@ -4,10 +4,10 @@
 
 ![System Diagram](./howto-k8s-alb.png "System Diagram")
 
-## 前置条件
+## 前提条件
 - [Walkthrough: App Mesh with EKS](../eks/)
 - [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v1.1/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller)
-- 安装Docker。 示例需要构建演示应用的Docker image。
+- 安装Docker，示例需要构建演示应用的Docker image。
 
 注意: 只需要部署 [ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v1.1/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller)，示例中服务将替换ALB Ingress Controller链接中的echoserver
 
