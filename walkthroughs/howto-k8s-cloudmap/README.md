@@ -1,32 +1,34 @@
-## Overview
-This example shows how Kubernetes deployments can use AWS CloudMap for service-discovery when using App Mesh. AWS Cloud Map is a cloud resource discovery service. With Cloud Map, you can define custom names for your application resources, and it maintains the updated location of these dynamically changing resources. This increases your application availability because your web service always discovers the most up-to-date locations of its resources.
+## 总览
+此示例显示了使用App Mesh时Kubernetes的Deployment 如何使用AWS CloudMap进行服务发现。AWS Cloud Map是一种云资源发现服务。借助Cloud Map，您可以为应用程序自定义资源名称，并维护这些动态变化的资源的更新情况。您的Web服务始终会发现其资源的最新位置，这将提高应用程序的可用性。
 
-In this example there are two CloudMap services and three K8s Deployments as described below.
+在此示例中，有两个CloudMap服务和三个K8s部署，如下所述。
 
 ### Color
-There are two deployments of colorapp, _blue_ and _red_. Pods of both these deployments are registered behind service colorapp.howto-k8s-cloudmap.pvt.aws.local. Blue pods are registered with the mesh as colorapp-blue virtual-node and red pods as colorapp-red virtual-node. These virtual-nodes are configured to use AWS CloudMap as service-discovery, hence the IP addresses of these pods are registered with the CloudMap service with corresponding attributes.
 
-Additionally a colorapp virtual-service is defined that routes traffic to blue and red virtual-nodes.
+colorapp有两种Deployment，_blue_ 和 _red_。这两个Deployment的Pod都注册到服务colorapp.howto-k8s-cloudmap.pvt.aws.local。_blue_ Pod已在网格中注册为colorapp-blue虚拟节点（virtual-node），_red_ Pod已注册为colorapp-red虚拟节点（virtual-node）。这些虚拟节点使用AWS CloudMap实现服务发现，因此这些Pod的IP会注册到对应的CloudMap实现服务注册。
+
+另外，定义了colorapp虚拟服务（virtual-service），该服务将流量路由到 _blue_ 和 _red_ 虚拟节点。
 
 ### Front
-Front app acts as a gateway that makes remote calls to colorapp. Front app has single deployment with pods registered with the mesh as _front_ virtual-node. This virtual-node uses colorapp virtual-service as backend. This configures Envoy injected into front pod to use App Mesh's EDS to discover colorapp endpoints.
 
-## Prerequisites
+Front app充当网关，可调用colorapp。Front app包含一个Deployment，其中Pod已在服务网格中注册为 _front_ 虚拟节点。该虚拟节点使用colorapp虚拟服务作为后端。这会将注入到前端吊舱中的Envoy配置为使用App Mesh的EDS发现colorapp端点。Envoy注入到 _front_ 的这些配置，使其能够使用App Mesh的EDS(Endpoint Discovery Service)发现colorapp端点。
+
+## 前提条件
 1. [Walkthrough: App Mesh with EKS](../eks/)
 
-2. v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
+2. v1beta2 示例 manifest 需要 [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) 版本 [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). 运行下面的命令去检查你运行的controller版本.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
-You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
+如果你 [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) 版本是 [v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)，你可以使用 v1beta1 示例 manifest
 
-3. Install Docker. It is needed to build the demo application images.
+3. 安装Docker，示例需要构建演示应用的Docker image。
 
-## Setup
+## 配置
 
-1. Clone this repository and navigate to the walkthrough/howto-k8s-cloudmap folder, all commands will be ran from this location
-2. **Your** account id:
+1. 克隆此仓库，然后进入`walkthrough/howto-k8s-cloudmap`文件夹，所有的命令都是在此文件夹下运行。
+2. **你的** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
@@ -34,19 +36,19 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
-5. **VPC_ID** environment variable is set to the VPC where Kubernetes pods are launched. VPC will be used to setup private DNS namespace in AWS using create-private-dns-namespace API. To find out VPC of EKS cluster you can use `aws eks describe-cluster`. See [below](#1-how-can-i-use-cloud-map-namespaces-other-than-privatednsnamespace) for reason why Cloud Map PrivateDnsNamespace is required.
+4. **(可选项) 指定 Envoy Image 版本** 如果要使用与[默认版本](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration)不同的Envoy 容器镜像，运行 `helm upgrade` 去覆盖 `sidecar.image.repository` 和 `sidecar.image.tag` 字段。
+5. **VPC_ID** 环境变量设置为启动 Kubernetes pods 的VPC。VPC 讲用于通过`create-private-dns-namespace` API 在AWS中配置私有DNS namespace . 要查看EKS 集群所在的VPC，可以使用 `aws eks describe-cluster` 。关于为何Cloud Map需要 PrivateDnsNamespace，可以参考[文档](#1-how-can-i-use-cloud-map-namespaces-other-than-privatednsnamespace)。
     ```
     export VPC_ID=...
     ```
-6. Deploy
-    ```. 
+6. 部署
+    ```.
     ./deploy.sh
     ```
 
-## Verify
+## 验证
 
-1. Use AWS Cloud Map DiscoverInstances API to check that pods are getting registered
+1. 使用 AWS Cloud Map DiscoverInstances API 查看被调用的 pods 信息。
    ```
    $ kubectl get pod -n howto-k8s-cloudmap -o wide
     NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE                                           NOMINATED NODE   READINESS GATES
@@ -120,21 +122,22 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 ## FAQ
 ### 1. How can I use Cloud Map namespaces other than PrivateDnsNamespace?
-AWS Cloud Map supports three types of namespaces;
-1. [PublicDnsNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePublicDnsNamespace.html): Namespace that is visible to the internet.
-2. [PrivateDnsNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePrivateDnsNamespace.html): Namespace that is visible only in the specified VPC.
-3. [HttpNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateHttpNamespace.html): Namespace that supports only HTTP discovery using DiscoverInstances. This namespace does not support DNS resolution.
+我如何使用除PrivateDnsNamespace之外的Cloud Map命名空间？
+AWS Cloud Map 支持三种 namespaces;
+1. [PublicDnsNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePublicDnsNamespace.html): Namespace 对互联网可用.
+2. [PrivateDnsNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePrivateDnsNamespace.html): Namespace 仅对指定的VPC内可用.
+3. [HttpNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateHttpNamespace.html): Namespace使用DiscoverInstances，仅支持HTTP 发现. 此namespace不支持DNS解析.
 
-Currently App Mesh only supports backend applications running within VPC boundaries and that are not directly reachable from internet. So this rules out PublicDnsNamespace support. Both PrivateDnsNamespace and HttpNamespace can be supported but given that most applications still use DNS resolution before making a connection to remote service (via Envoy), HttpNamespace cannot be readily used. In future, we plan on leveraging [Envoy's DNS filter](https://github.com/envoyproxy/envoy/issues/6748) to support both PrivateDnsNamespace and HttpNamespace seamlessly. For now it is required to create PrivateDnsNamespace to get both DNS resolution and App Mesh's EDS support. Note that both PrivateDnsNamespace and HttpNamespace services support custom attributes that can be used with DiscoverInstances API.
+当前，App Mesh仅支持在VPC内运行且无法从Internet直接访问的后端应用程序。因此，这排除了PublicDnsNamespace支持。可以使用PrivateDnsNamespace和HttpNamespace，但是鉴于大多数应用程序在连接到远程服务（通过Envoy）之前仍使用DNS解析，因此HttpNamespace不是最建议的使用方式。将来，我们计划使用 [Envoy's DNS filter](https://github.com/envoyproxy/envoy/issues/6748)无缝支持PrivateDnsNamespace和HttpNamespace。目前，需要创建PrivateDnsNamespace以获得DNS解析和App Mesh的EDS支持。请注意，PrivateDnsNamespace和HttpNamespace服务都支持自定义属性，使其可以与DiscoverInstances API一起使用。
 
-## Troubleshooting
-### 1. My deployments and corresponding pods are running successfully, but I don't see the instances when calling Cloud Map DiscoverInstances API. What is the reason?
-Following are some of the reasons why instances are not getting registered with Cloud Map.
-1. Check that aws-app-mesh-controller-for-k8s is >=v0.1.2 or >=v1.0.0 based on the API version. If not upgrade the controller using helm instructions [here](https://github.com/aws/eks-charts).
-2. Check the logs of aws-app-mesh-controller-for-k8s for any errors. [stern](https://github.com/wercker/stern) is a great tool to use for this.
+## 故常排查
+### 1. 我的Deployment和相应的Pod已成功运行，但是在调用Cloud Map DiscoverInstances API时看不到实例。 是什么原因？
+以下是一些实例未在Cloud Map中注册的原因。
+1. 检查aws-app-mesh-controller-for-k8s 版本 >=v0.1.2 或API版本 >=v1.0.0。 如果没有，请使用Helm 升级controller，可以参考[文档](https://github.com/aws/eks-charts).
+2. 检查aws-app-mesh-controller-for-k8s日志，查看是否有报错. [stern](https://github.com/wercker/stern)是一个在这个场景下非常好用的工具.
    ```
    $ kubectl logs -n appmesh-system appmesh-controller-<pod-id>
    (or)
    $ stern -n appmesh-system appmesh-controller
    ```
-3. If you see AccessDeniedException in the logs when calling Cloud Map APIs, then update IAM role used by worker node to include AWSCloudMapRegisterInstanceAccess managed IAM policy.
+3. 如果在调用Cloud Map API时在日志中看到AccessDeniedException，请更新工作节点使用的IAM Role，使其包含AWSCloudMapRegisterInstanceAccess托管的IAM策略。

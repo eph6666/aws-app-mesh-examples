@@ -31,7 +31,7 @@ The following articles demonstrate how to use an App Mesh feature
 
 - [ ] eks (yfwang)
 - [x] howto-k8s-http-headers (yfwang)
-- [ ] howto-k8s-retry-policy (yfwang)
+- [x] howto-k8s-retry-policy (yfwang)
 - [ ] howto-k8s-timeout-policy (yfwang)
 - [ ] howto-k8s-outlier-detection (pingfan)
 - [ ] howto-k8s-connection-pools (pingfan)
@@ -39,7 +39,7 @@ The following articles demonstrate how to use an App Mesh feature
 - [ ] howto-k8s-ingress-gateway (pingfan)
 - [ ] howto-k8s-egress (pingfan)
 - [ ] howto-k8s-tls-acm (pingfan)
-- [ ] howto-k8s-cloudmap (pingfan)
+- [x] howto-k8s-cloudmap (pingfan)
 - [x] howto-k8s-alb (yfwang)
 
 [Stage-2]
