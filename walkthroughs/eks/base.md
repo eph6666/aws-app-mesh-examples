@@ -1,27 +1,27 @@
-# App Mesh with EKS—Base Deployment
+# App Mesh with EKS—基础部署
 
-We will cover the base setup of AppMesh with EKS in this part.
+这部分将涵盖在EKS中使用AppMesh的基础设置。
 
-## Prerequisites
+## 先决条件
 
-In order to successfully carry out the base deployment:
+为确保后续内容顺利进行，请核对以下内容已经正确部署：
 
-- Make sure to have newest [AWS CLI](https://aws.amazon.com/cli/) installed, that is, version `1.18.82` or above.
-- Make sure to have `kubectl` [installed](https://kubernetes.io/docs/tasks/tools/install-kubectl/), at least version `1.13` or above.
-- Make sure to have `jq` [installed](https://stedolan.github.io/jq/download/).
-- Make sure to have `aws-iam-authenticator` [installed](https://github.com/kubernetes-sigs/aws-iam-authenticator), required for eksctl
-- Make sure to have `helm` [installed](https://helm.sh/docs/intro/install/).
-- Install [eksctl](https://eksctl.io/). See [appendix](#appendix) for eksctl install instructions. Please make you have version `0.21.0` or above installed
+- 请确保安装了最新的 [AWS CLI](https://aws.amazon.com/cli/)，即 `1.18.82` 或更高版本。
+- 请确保安装了最新的 [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)，即 `1.13` 或更高版本。
+- 请确保已经安装了 [jq](https://stedolan.github.io/jq/download/)。
+- 请确保已经安装了 [aws-iam-authenticator](https://github.com/kubernetes-sigs/aws-iam-authenticator)，required for eksctl。
+- 请确保`helm` 已经[安装](https://helm.sh/docs/intro/install/)。
+- 安装 [eksctl](https://eksctl.io/). 请参阅 [附录](#附录) 以获取eksctl安装说明。请确保您安装了0.21.0或更高版本。
 
-Note that this walkthrough assumes throughout to operate in the `us-west-2` region.
+请注意，本实验假设整个实验过程都在运行在`us-west-2`区域中。
 
 ```sh
 export AWS_DEFAULT_REGION=us-west-2
 ```
 
-## Cluster provisioning
+## 集群配置
 
-Create an EKS cluster with `eksctl` using the following command:
+使用以下命令，通过`eksctl`创建一个EKS集群：
 
 ```sh
 eksctl create cluster \
@@ -36,27 +36,27 @@ eksctl create cluster \
 # [✔]  EKS cluster "appmeshtest" in "us-west-2" region is ready
 ```
 
-When completed, update the `KUBECONFIG` environment variable according to the `eksctl` output:
+完成后，根据`eksctl`的输出更新`KUBECONFIG`环境变量：
 
 ```sh
 export KUBECONFIG=~/.kube/eksctl/clusters/appmeshtest
 ```
 
-## Install App Mesh  Kubernetes components
+## 安装App Mesh Kubernetes组件
 
-In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that.
+为了在Pod创建时自动注入App Mesh组件和代理，我们需要在集群上创建一些自定义资源。为此，我们将使用 *helm*。
 
-*Code base*
+*代码仓库*
 
-Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
+将克隆代码仓库到适当的目录，然后cd目录中，我们将从该路径运行所有命令。
 ```sh
 git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
 cd aws-app-mesh-examples/walkthroughs/eks/
 ```
 
-*Install App Mesh Components*
+*安装App Mesh组件*
 
-Run the following set of commands to install the App Mesh controller 
+运行以下命令集以安装App Mesh控制器（controller）
 
 ```sh
 helm repo add eks https://aws.github.io/eks-charts
@@ -67,9 +67,11 @@ helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-sy
 
 ```
 
-Now you're all set, you've provisioned the EKS cluster and set up App Mesh components that automate injection of Envoy and take care of the life cycle management of the App Mesh resources such as meshes, virtual nodes, virtual services, and virtual routers.
 
-At this point, you also might want to check the custom resources the App Mesh Controller uses:
+目前，一切就绪，您已经配置了EKS集群并设置了App Mesh组件，这些组件能够自动向Pod注入Envoy并负责App Mesh资源（如Mesh，虚拟节点，虚拟服务和虚拟路由器）的生命周期管理。
+
+此时，您可能还需要检查App Mesh Controller使用的自定义资源：
+
 
 ```sh
 kubectl api-resources --api-group=appmesh.k8s.aws
@@ -80,12 +82,12 @@ kubectl api-resources --api-group=appmesh.k8s.aws
 # virtualservices                appmesh.k8s.aws   true         VirtualService
 ```
 
-## The application
+## 示例应用
 
-We use the [howto-k8s-http2](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-http2) to demonstrate the usage of App Mesh with EKS.
+我们使用 [howto-k8s-http2](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-http2) 来演示将App Mesh与EKS结合使用的方法。
 
-Make sure all resources have been created, using the following command:
 
+确保使用以下命令创建了所有资源：
 ```sh
 kubectl -n appmesh-system get deploy,po,svc
 
@@ -109,7 +111,7 @@ green-5674cfb556-65qch    2/2     Running   0          3m48s   192.168.1.139    
 red-5bf7f49fbd-86f54      2/2     Running   0          3m49s   192.168.82.36    ip-192-168-70-3.us-west-2.compute.internal    <none>           1/1
 ```
 
-Now, validate the mesh creation using the `aws` CLI:
+现在，使用aws CLI验证服务网格的创建情况：
 
 ```sh
 aws appmesh list-meshes
@@ -211,7 +213,7 @@ aws appmesh list-virtual-routers --mesh-name howto-k8s-http2
 
 ```
 
-You can access the `color` service of the app in-cluster as follows:
+您可以按以下方式访问应用程序集群中的`color`服务：
 
 ```sh
 kubectl -n howto-k8s-http2 port-forward deployment/client 7000:8080 &
@@ -228,11 +230,11 @@ curl localhost:7000/color ; echo;
 blue
 ```
 
-With this you're done concerning the base deployment. You can now move on to day 2 ops tasks such as using [CloudWatch](o11y-cloudwatch.md) with App Mesh on EKS.
+这样就完成了有关基础部署的工作。 现在，您可以继续进行第2天的操作任务，例如在EKS上将[CloudWatch](o11y-cloudwatch.md)与App Mesh一起使用.
 
-## Clean-up
+## 清除
 
-The AWS App Mesh Controller For Kubernetes performs clean-up of the mesh and its dependent resources (virtual nodes, services, virtual routers etc.) when deleting the demo namespace and the mesh custom resource like so:
+删除演示命名空间(namesapce)和Mesh自定义资源时，AWS App Mesh Controller会清理网格及其相关资源（虚拟节点，服务，虚拟路由器等），如下所示：
 
 ```sh
 kubectl delete ns howto-k8s-http2 && kubectl delete mesh howto-k8s-http2
@@ -243,16 +245,16 @@ helm delete appmesh-controller -n appmesh-system
 ```
 
 
-Finally, get rid of the EKS cluster to free all compute, networking, and storage resources, using:
+最后，使用以下方法释放EKS集群所有计算，网络和存储资源：
 
 ```sh
 eksctl delete cluster --name appmeshtest
 ```
 
 
-## Appendix
+## 附录
 
-### eksctl Installation
+### eksctl 安装说明
 
 ```sh
 curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp

@@ -1,23 +1,22 @@
-# App Mesh with EKS—Observability: Jaeger
- 
-NOTE: Before you start with this part, make sure you've gone through the [base deployment](base.md) of App Mesh with EKS. In other words, the following assumes that an EKS cluster with App Mesh configured is available and the prerequisites (aws, kubectl, jq, etc. installed) are met.
+# App Mesh在EKS上的可观测性: Jaeger
 
-Jaeger is an end to end distributed tracing system, that allows users to monitor and troubleshoot transactions in complex distributed systems. 
+注意：在开始本部分之前，请确保已完成带有EKS的App Mesh的[环境搭建](base.md)。 换句话说，以下假设已配置了App Mesh的EKS群集可用，并且满足先决条件（aws，kubectl，jq等）。
 
-This guide uses [Colorteller example application with HTTP header bases routing](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-http-headers) to showcase distributed tracing using Jaeger.
+Jaeger是一个端到端的分布式跟踪系统，它使用户可以监视复杂的分布式系统中的事务并进行故障排除。
 
+本指南使用[基于HTTP header路由的示例程序](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-http-headers)来展示使用Jaeger进行的分布式跟踪。
 
-### Installation
+### 安装
 
-#### Option 1: Quick setup
+#### 选项 1: 快速开始
 
-App Mesh provides a basic installation to setup Jaeger quickly using Helm. To install the Jaeger pre-configured to work with App Mesh, follow the instructions in [appmesh-jaeger](https://github.com/aws/eks-charts/blob/master/stable/appmesh-jaeger/README.md) Helm charts.
+App Mesh提供了基本安装，可使用Helm快速设置Jaeger。要安装可与App Mesh一起使用的预先配置为Jaeger，请按照[appmesh-jaeger](https://github.com/aws/eks-charts/blob/master/stable/appmesh-jaeger/README.md) Helm charts中的说明进行操作。
 
-Note: you will need to _restart_ all the running pods inside the mesh after enabling tracing so the Envoy sidecar can pick up the tracing config
+注意：启用跟踪后，您将需要 _重启_ 网格内的所有正在运行的Pod，以便Envoy边车可以选择跟踪配置
 
-#### Option 2: Existing Jaeger deployment
+#### 选项 2: 使用已经存在的Jaeger
 
-If you already have a Jaeger setup, you can simply configure App Mesh Kubernetes controller to send traces to the existing Jaeger endpoint using:
+如果您已经部署了Jaeger，则只需使用以下命令配置App Mesh Kubernetes controller即可将跟踪发送到现有Jaeger中：
 
 ```
 helm upgrade -i appmesh-controller eks/appmesh-controller \
@@ -28,8 +27,7 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
     --set tracing.port=<JAEGER_ENDPOINT_PORT>
 ```
 
-App Mesh configures Envoy sidecars to produce traces in [Zipkin HTTP JSON v2 format](https://www.jaegertracing.io/docs/1.16/apis/#zipkin-formats-stable). The exact tracing config used is:
-
+App Mesh将配置Envoy生成[Zipkin HTTP JSON v2 format](https://www.jaegertracing.io/docs/1.16/apis/#zipkin-formats-stable)格式得跟踪信息。使用的确切跟踪配置是：
 ```
 tracing:
  http:
@@ -43,28 +41,27 @@ tracing:
 ```
 
 
-### Usage
+### 使用
 
-For the testing/demo (Option 1 installation), you may use port-forwarding to Jaeger endpoint:
+对于测试或演示环境（选项1安装），您可以使用端口转发到Jaeger：
 
 ```
 kubectl -n appmesh-system port-forward svc/appmesh-jaeger 16686:16686
 ```
 
-Access the Jaeger UI using the URL: http://localhost:16686/
+访问Jaeger UI: http://localhost:16686/
 
-You can see the list of services in the dropdown on the top left and see their corresponding traces:
+您可以在左上角的下拉列表中查看服务列表，并查看其相应的跟踪记录：
 
 ![Jaeger traces](jaeger-traces-0.png)
 
-You can see the dependency graph under “Dependencies” tab:
+您可以在“Dependencies”选项卡下看到依赖关系图：
 
 ![Jaeger service dependency graph](jaeger-traces-1.png)
 
 
-### Cleanup
+### 清理环境
 
 ```
 helm delete appmesh-jaeger -n appmesh-system
 ```
-

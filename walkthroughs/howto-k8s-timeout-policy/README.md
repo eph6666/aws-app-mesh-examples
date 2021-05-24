@@ -1,32 +1,32 @@
-## Overview
-This example shows how to configure App Mesh Route and VirtualNode listener timeouts. This feature allows us to specify a custom timeout value based on the application's need and when not specified a default timeout of 15 seconds will be applied to all the requests.
+## 总览
+本示例说明如何配置App Mesh虚拟路由（virtual-route）和虚拟节点（VirtualNode）侦听器超时。 此功能使我们可以根据应用程序的需要指定自定义超时值，如果未指定，则将对所有请求应用15秒的默认超时。
 
-We use AWS Cloud Map based service discovery mechanism in this example walkthrough.
+在本示例演练中，我们使用基于AWS Cloud Map的服务发现机制。
 
 ### Color
-There are two deployments of colorapp, _blue_ and _red_. Pods of both these deployments are registered behind service colorapp.howto-k8s-timeout-policy.pvt.aws.local. Blue pods are registered with the mesh as colorapp-blue virtual-node and red pods as colorapp-red virtual-node. These virtual-nodes are configured to use AWS CloudMap as service-discovery, hence the IP addresses of these pods are registered with the CloudMap service with corresponding attributes. We specify a timeout value of 60 secs for all the VirtualNodes and VirtualRouters.
+colorapp包含两个deployments, _blue_ 和 _red_. 这两个Deployment的Pod都注册到服务colorapp.howto-k8s-timeout-policy.pvt.aws.local。 _blue_ Pod已在网格中注册为colorapp-blue虚拟节点（virtual-node），_red_ Pod已注册为colorapp-red虚拟节点（virtual-node）。 这些虚拟节点使用AWS CloudMap实现服务发现，因此这些Pod的IP会注册到对应的CloudMap实现服务注册。我们为所有虚拟节点和虚拟路由器指定的超时值为60秒。
 
-Additionally a colorapp virtual-service is defined that routes traffic to blue and red virtual-nodes.
+另外，定义了colorapp虚拟服务，该服务将流量路由到 _blue_ 和 _red_ 虚拟节点。
 
 ### Front
-Front app acts as a gateway that makes remote calls to colorapp. Front app has single deployment with pods registered with the mesh as _front_ virtual-node. This virtual-node uses colorapp virtual-service as backend. This configures Envoy injected into front pod to use App Mesh's EDS to discover colorapp endpoints.
+Front app充当网关，可调用colorapp。Front app包含一个Deployment，其中Pod已在服务网格中注册为 _front_ 虚拟节点。该虚拟节点使用colorapp虚拟服务作为后端。这会将注入到前端吊舱中的Envoy配置为使用App Mesh的EDS发现colorapp端点。Envoy注入到 _front_ 的这些配置，使其能够使用App Mesh的EDS(Endpoint Discovery Service)发现colorapp端点。
 
-Colorapp is configured to respond with a delay of 45 seconds to simulate an upstream request that takes more than the default Envoy timeout of 15 seconds. Since, the configured timeout value in _front_virtual-node is 60 seconds(along with route timeout of 60 secs in the backend virtual router), we can see that envoy will not timeout in this scenario.
+Colorapp配置了45秒的延迟响应，以模拟耗时超过Envoy默认的15秒超时等待时间。 由于 _front_ 虚拟节点（virtual-node）中配置的超时值为60秒（后端虚拟路由器中的路由超时为60秒），因此我们可以看到在这种情况下使者将不会超时。
 
-## Prerequisites
+## 前提条件
 1. [Walkthrough: App Mesh with EKS](../eks/)
 
-2. v1beta2 example manifest requires aws-app-mesh-controller-for-k8s version >=v1.0.0. Run the following to check the version of controller you are running.
+2. v1beta2 示例 manifest 需要 [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) 版本 [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). 运行下面的命令去检查你运行的controller版本.
 
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
-3. Install Docker. It is needed to build the demo application images.
+3. 安装Docker，示例需要构建演示应用的Docker image。
 
-## Setup
+## 配置
 
-1. Clone this repository and navigate to the walkthrough/howto-k8s-timeout-policy folder, all commands will be ran from this location
-2. **Your** account id:
+1. 克隆此仓库，然后进入`walkthrough/howto-k8s-timeout-policy`文件夹，所有的命令都是在此文件夹下运行。
+2. **你的** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
@@ -34,19 +34,19 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
-5. **VPC_ID** environment variable is set to the VPC where Kubernetes pods are launched. VPC will be used to setup private DNS namespace in AWS using create-private-dns-namespace API. To find out VPC of EKS cluster you can use `aws eks describe-cluster`. See [below](#1-how-can-i-use-cloud-map-namespaces-other-than-privatednsnamespace) for reason why Cloud Map PrivateDnsNamespace is required.
+4. **(可选项) 指定 Envoy Image 版本** 如果要使用与[默认版本](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration)不同的Envoy 容器镜像，运行 `helm upgrade` 去覆盖 `sidecar.image.repository` 和 `sidecar.image.tag` 字段。
+5. **VPC_ID** 环境变量设置为启动 Kubernetes pods 的VPC。VPC 讲用于通过`create-private-dns-namespace` API 在AWS中配置私有DNS namespace . 要查看EKS 集群所在的VPC，可以使用 `aws eks describe-cluster` 。关于为何Cloud Map需要 PrivateDnsNamespace，可以参考[文档](#1-how-can-i-use-cloud-map-namespaces-other-than-privatednsnamespace)。
     ```
     export VPC_ID=...
     ```
-6. Deploy
-    ```. 
+6. 部署
+    ```.
     ./deploy.sh
     ```
 
-## Verify
+## 验证
 
-1. Use AWS Cloud Map DiscoverInstances API to check that pods are getting registered
+1. 使用 AWS Cloud Map DiscoverInstances API 查看被调用的 pods 信息。
    ```
    $ kubectl get pod -n howto-k8s-timeout-policy -o wide
     NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE                                           NOMINATED NODE   READINESS GATES
@@ -118,14 +118,15 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
     }
    ```
 
-2. You can now make a call to /color of front and you should see a delayed response that takes more than default envoy timeout of 15 seconds. You can try adjusting the timeout value around the simulated 45 seconds delay and observe the behavior change. Removing the timeout config from the VirtualNode and VirtualRouter specs will result in a timeout as expected.
+2. 现在，您可以访问front app的/color路径，并且应该看到延迟的响应时间超过了默认的特使超时时间15秒。您可以尝试在模拟的45秒延迟附近调整超时值，并观察行为变化。从虚拟节点（VirtualNode）和虚拟路由（VirtualRouter）配置中删除超时配置将导致超时。
 
-## Troubleshooting
-1. Check that aws-app-mesh-controller-for-k8s is >=v1.0.0 based on the API version. If not upgrade the controller using helm instructions [here](https://github.com/aws/eks-charts).
-2. Check the logs of aws-app-mesh-controller-for-k8s for any errors. [stern](https://github.com/wercker/stern) is a great tool to use for this.
+## 故障排除
+1. 检查aws-app-mesh-controller-for-k8s API版本 >=v1.0.0。 如果没有，请使用Helm 升级controller，可以参考[文档](https://github.com/aws/eks-charts).
+
+2. 检查aws-app-mesh-controller-for-k8s日志，查看是否有报错. [stern](https://github.com/wercker/stern)是一个在这个场景下非常好用的工具.
    ```
    $ kubectl logs -n appmesh-system appmesh-controller-manager-<pod-id>
    (or)
    $ stern -n appmesh-system appmesh-controller-manager
    ```
-3. If you see AccessDeniedException in the logs when calling Cloud Map APIs, then update IAM role used by worker node to include AWSCloudMapRegisterInstanceAccess managed IAM policy.
+3. 如果在调用Cloud Map API时在日志中看到AccessDeniedException，请更新工作节点使用的IAM Role，使其包含AWSCloudMapRegisterInstanceAccess托管的IAM策略。

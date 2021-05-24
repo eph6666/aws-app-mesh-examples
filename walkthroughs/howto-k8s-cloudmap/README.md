@@ -133,7 +133,7 @@ AWS Cloud Map 支持三种 namespaces;
 ## 故常排查
 ### 1. 我的Deployment和相应的Pod已成功运行，但是在调用Cloud Map DiscoverInstances API时看不到实例。 是什么原因？
 以下是一些实例未在Cloud Map中注册的原因。
-1. 检查aws-app-mesh-controller-for-k8s 版本 >=v0.1.2 或API版本 >=v1.0.0。 如果没有，请使用Helm 升级controller，可以参考[文档](https://github.com/aws/eks-charts).
+1. 检查aws-app-mesh-controller-for-k8s API版本 >=v0.1.2 或 >=v1.0.0。 如果没有，请使用Helm 升级controller，可以参考[文档](https://github.com/aws/eks-charts).
 2. 检查aws-app-mesh-controller-for-k8s日志，查看是否有报错. [stern](https://github.com/wercker/stern)是一个在这个场景下非常好用的工具.
    ```
    $ kubectl logs -n appmesh-system appmesh-controller-<pod-id>

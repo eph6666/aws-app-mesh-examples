@@ -1,18 +1,19 @@
-# App Mesh with EKS—Observability: Prometheus
- 
-NOTE: Before you start with this part, make sure you've gone through the [base deployment](base.md) of App Mesh with EKS. In other words, the following assumes that an EKS cluster with App Mesh configured is available and the prerequisites (aws, kubectl, jq, etc. installed) are met.
+# App Mesh在EKS上的可观测性: Prometheus
 
-Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, and displays the results. You can use Prometheus with AWS App Mesh to track metrics of applications within the meshes. You can also track metrics for the App Mesh Kubernetes Controller.
+注意：在开始本部分之前，请确保已完成带有EKS的App Mesh的[环境搭建](base.md)。换而言之，以下假设已配置了App Mesh的EKS群集可用，并且满足先决条件（aws，kubectl，jq等）。
 
-## Installation
+Prometheus是一个系统和服务监视系统。它以设定时间间隔从目标收集指标，匹配规则表达式并显示结果。您可以将Prometheus与AWS App Mesh一起使用，以监控服务网格中应用程序。您还可以监控App Mesh Kubernetes Controller的指标。
 
-### Option 1: Quick setup
- 
-App Mesh provides a basic installation to setup Prometheus quickly using Helm. To install the Prometheus pre-configured to work with App Mesh, follow the instructions in [appmesh-prometheus](https://github.com/aws/eks-charts/blob/master/stable/appmesh-prometheus/README.md) Helm charts.
+## 安装
 
-### Option 2: Existing Prometheus deployment
+### 选项 1: 快速开始
 
-If you already have a Prometheus setup and you’re interested in the details of Prometheus scrape config, you can find it [here](https://github.com/aws/eks-charts/blob/master/stable/appmesh-prometheus/templates/config.yaml). Specifically, the scrape config for Envoy sidecars:
+
+App Mesh提供了基本安装，可使用Helm快速设置Prometheus。要安装可与App Mesh一起使用的预先配置为Prometheus，请按照[appmesh-prometheus](https://github.com/aws/eks-charts/blob/master/stable/appmesh-prometheus/README.md) Helm charts中的说明进行操作。
+
+### 选项 2: 使用已经存在的Promotheus
+
+如果您已经安装了Prometheus，并且对Prometheus scrape配置的详细信息感兴趣，则可以在[此处](https://github.com/aws/eks-charts/blob/master/stable/appmesh-prometheus/templates/config.yaml)找到。具体来说，Envoy Sidecar的抓取配置：
 
 ```
     - job_name: 'appmesh-envoy'
@@ -38,23 +39,23 @@ If you already have a Prometheus setup and you’re interested in the details of
         target_label: kubernetes_pod_name
 ```
 
-## Usage
+## 使用
 
-For the testing/demo (Option 1 installation), you may use port-forwarding to Prometheus endpoint:
+对于测试或演示环境（选项1安装），您可以使用端口转发到Prometheus：
 
 ```
 kubectl -n appmesh-system port-forward svc/appmesh-prometheus 9090:9090
 ```
 
-Access the Prometheus UI using the URL: http://localhost:9090/
+Prometheus UI: http://localhost:9090/
 
-To see the AWS API calls the App Mesh Kubernetes controller makes, search for `aws_api_calls_total`
+要查看使用AWS API 调用App Mesh Kubernetes controller，请搜索`aws_api_calls_total`
 
 ![Prometheus metrics for App Mesh controller](prometheus-metrics-0.png)
 
-Similarly, you can see all the scraped metrics (including application health metrics) in the metrics dropdown
+同样，您可以在指标下拉列表中查看所有收集的指标（包括应用程序运行状况指标）
 
-## Cleanup
+## 清除环境
 
 ```
 helm delete appmesh-prometheus -n appmesh-system

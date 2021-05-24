@@ -1,20 +1,20 @@
-# App Mesh with EKS—Observability: CloudWatch
+# App Mesh在EKS上的可观测性: CloudWatch
 
-NOTE: Before you start with this part, make sure you've gone through the [base deployment](base.md) of App Mesh with EKS. In other words, the following assumes that an EKS cluster with App Mesh configured is available and the prerequisites (`aws`, `kubectl`, `jq`, etc. installed) are met.
+注意：在开始本部分之前，请确保已完成带有EKS的App Mesh的[环境搭建](base.md)。 换句话说，以下假设已配置了App Mesh的EKS群集可用，并且满足先决条件（aws，kubectl，jq等）。
 
-## Prometheus Metrics
+## Prometheus 监控信息
 
-See [App Mesh Observability: Statistics](https://docs.aws.amazon.com/app-mesh/latest/userguide/observability.html) in the App Mesh User Guide for more information on Envoy statistics and Prometheus metrics.
+有关Envoy统计信息和Prometheus指标的更多信息，请参见App Mesh User Guide中的[App Mesh Observability: Statistics](https://docs.aws.amazon.com/app-mesh/latest/userguide/observability.html)。
 
-You can install the CloudWatch Agent to your cluster and configure it to collect a subset of metrics from your proxies. To set the appropriate IAM permissions for your cluster and install the agent, follow the steps in [Install the CloudWatch Agent with Prometheus Metrics Collection](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-Setup.html). The default installation contains a Prometheus scrape configuration which pulls a useful subset of Envoy stats. For more information, see [Prometheus Metrics for App Mesh](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-metrics.html#ContainerInsights-Prometheus-metrics-appmesh).
+您可以将CloudWatch Agent安装到您的集群并将其配置为从Envoy收集所需指标。要为您的集群设置适当的IAM权限并安装代理，请按照[安装具有 Prometheus 指标收集功能的 CloudWatch 代理](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-Setup.html)中的步骤进行操作。默认安装包含Prometheus抓取配置，使其能提取Envoy统计信息中所需部分。有关更多信息，请参见[App Mesh 的 Prometheus 指标](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-metrics.html#ContainerInsights-Prometheus-metrics-appmesh)。
 
-To create an App Mesh custom CloudWatch dashboard configured to display the metrics that the agent is collecting, follow the steps in the [Viewing Your Prometheus Metrics](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-viewmetrics.html) tutorial. Your graphs will begin to populate with the corresponding metrics as traffic enters the App Mesh application.
+要创建一个自定义CloudWatch仪表板，显示App Mesh代理程序正在收集的指标，请按照[查看 Prometheus 指标](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-viewmetrics.html)教程中的步骤进行操作。当流量进入App Mesh应用程序时，您的监控仪表板会有所显示。
 
-## Logs via Fluentd
+## 通过Fluentd记录日志
 
-In this section, we'll install Fluentd to your cluster and use it to forward access logs from Envoy to CloudWatch.
+在本节中，将在集群中安装Fluentd，并使用它将Envoy的访问日志转发到CloudWatch。
 
-First, create an IAM policy as defined in [logs-policy.json](logs-policy.json) and attach it to the EC2 auto-scaling group of your EKS cluster. To attach the IAM logs policy via the command line, use:
+首先，按照[logs-policy.json](logs-policy.json)中创建一个IAM策略，并将其附加到您的EKS集群的EC2 auto-scaling group。要通过命令行附加IAM策略，请使用：
 
 ```
 $ INSTANCE_PROFILE_PREFIX=$(aws cloudformation describe-stacks | jq -r '.Stacks[].StackName' | grep eksctl-appmeshtest-nodegroup-ng)
@@ -26,7 +26,7 @@ $ aws iam put-role-policy \
       --policy-document file://./logs-policy.json
 ```
 
-Next, deploy Fluentd as a log forwarder using a `DaemonSet` as defined in the [fluentd.yaml](fluentd.yaml) manifest:
+接下来，使用[fluentd.yaml](fluentd.yaml)中定义的`DaemonSet`部署Fluentd，使其作为日志转发器：
 
 ```
 $ kubectl apply -f fluentd.yaml
@@ -38,17 +38,16 @@ fluentd-cloudwatch-7ls6g   1/1     Running   0          13m
 fluentd-cloudwatch-mdf9z   1/1     Running   0          13m
 ```
 
-Now it's time to configure the virtual node `colorgateway-appmesh-demo` so it outputs its logs to `stdout`, which is in turn forwarded by Fluentd to CloudWatch. In order to configure the virtual node, use the console to set the log output on virtual node `colorgateway-appmesh-demo`.
+现在配置虚拟节点（virtual-node）`colorgateway-appmesh-demo`，以便将其日志输出到`stdout`，然后由Fluentd转发到CloudWatch。请使用控制台在虚拟节点`colorgateway-appmesh-demo`上设置日志输出。
 
-First, locate the virtual node `colorgateway-appmesh-demo` in the AppMesh console:
+首先，在AppMesh控制台中找到虚拟节点`colorgateway-appmesh-demo` ：
 
 ![AppMesh console edit virtual node step 0](appmesh-log-0.png)
 
-Now, expand the 'Additional configuration' section and enter `/dev/stdout` in the 'HTTP access logs path' as shown in the following:
+现在，展开*日志记录 - 可选*部分，并在*HTTP访问日志路径*中输入`/dev/stdout`，如下所示：
 
 ![AppMesh console edit virtual node step 1](appmesh-log-1.png)
 
-When you now go to the CloudWatch console you should see something like this:
+现在，当您转到CloudWatch控制台时，您应该会看到类似以下内容的内容：
 
 ![CloudWatch console output of AppMesh virtual node](cloudwatch.png)
-

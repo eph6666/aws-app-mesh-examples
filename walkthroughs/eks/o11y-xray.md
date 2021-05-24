@@ -1,9 +1,8 @@
-# App Mesh with EKS—Observability: X-Ray
+# App Mesh在EKS上的可观测性: X-Ray
 
-NOTE: Before you start with this part, make sure you've gone through the [base deployment](base.md) of App Mesh with EKS. In other words, the following assumes that an EKS cluster with App Mesh configured is available and the prerequisites (`aws`, `kubectl`, `jq`, etc. installed) are met.
+注意：在开始本部分之前，请确保已完成带有EKS的App Mesh的[环境搭建](base.md)。 换句话说，以下假设已配置了App Mesh的EKS群集可用，并且满足先决条件（aws，kubectl，jq等）。
 
-First, attach the IAM policy `arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess` to the EC2 auto-scaling group of your EKS cluster as. To attach the IAM policy via the command line, use:
-
+首先，将IAM策略`arn：aws：iam :: aws：policy / AWSXRayDaemonWriteAccess`附加到您的EKS集群的EC2 auto-scaling group组中。要通过命令行附加IAM策略，请使用：
 ```
 $ INSTANCE_PROFILE_PREFIX=$(aws cloudformation describe-stacks | jq -r '.Stacks[].StackName' | grep eksctl-appmeshtest-nodegroup-ng)
 $ INSTANCE_PROFILE_NAME=$(aws iam list-instance-profiles | jq -r '.InstanceProfiles[].InstanceProfileName' | grep $INSTANCE_PROFILE_PREFIX)
@@ -13,7 +12,7 @@ $ aws iam attach-role-policy \
       --policy arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
 ```
 
-Enable X-Ray tracing for the App Mesh data plane
+启用App Mesh数据平面的X-Ray tracing
 
 ```sh
 helm upgrade -i appmesh-controller eks/appmesh-controller \
@@ -22,8 +21,7 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
     --set tracing.provider=x-ray
 ```
 
-The X-Ray daemon is automatically injected by [App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s) into your app containers. Let's verify that with the following command:
-
+X-Ray守护程序由[App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s) 自动注入到您的应用容器中。使用以下命令进行验证：
 
 ```
 $ kubectl -n appmesh-demo \
@@ -36,16 +34,16 @@ colorteller-blue-88bcffddb-6bmlt     3/3     Running   0          11m
 colorteller-red-6f55b447db-2ht5k     3/3     Running   0          11m
 ```
 
-You see the `3` here in the `READY` column? That means there are three containers running in each of the pods: the app container itself, Envoy as part of the App Mesh data plane, and the X-Ray agent feeding the traces to the X-Ray service.
+您在`READY` 列中看到`3`了吗？这意味着每个吊舱中运行着三个容器：应用程序容器本身，作为App Mesh数据平面一部分的Envoy，以及将跟踪信息提供给X-Ray服务的X-Ray代理。
 
-As a result we can now see the overall [service map](https://docs.aws.amazon.com/xray/latest/devguide/xray-console.html#xray-console-servicemap) rendering the wiring of the services: 
+我们现在可以看到整个[service map](https://docs.aws.amazon.com/xray/latest/devguide/xray-console.html#xray-console-servicemap)呈现了服务的调用线路：
 
 ![X-Ray console: service map view](xray-service-map.png)
 
-And, drilling down deeper, we can see the [traces](https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-traces), representing service invocations along the request path:
+我们可以看到[跟踪](https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-traces)，这代表了沿着请求路径的服务调用：
 
 ![X-Ray console: traces overview](xray-traces-0.png)
 
-The detailed view of a trace:
+跟踪的详细视图：
 
 ![X-Ray console: traces detailed view](xray-traces-1.png)

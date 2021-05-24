@@ -1,48 +1,47 @@
-# App Mesh with EKS—Observability: Grafana
- 
-NOTE: Before you start with this part, make sure you've gone through the [base deployment](base.md) of App Mesh with EKS. In other words, the following assumes that an EKS cluster with App Mesh configured is available and the prerequisites (aws, kubectl, jq, etc. installed) are met.
+# App Mesh在EKS上的可观测性: Grafana
 
-[Grafana](https://grafana.com/) is open source visualization and analytics software. It allows you to query, visualize, alert on, and explore your metrics exported via Prometheus or other monitoring systems.
+注意：在开始本部分之前，请确保已完成带有EKS的App Mesh的[环境搭建](base.md)。 换而言之，以下假设已配置了App Mesh的EKS群集可用，并且满足先决条件（aws，kubectl，jq等）。
 
-## Installation
+[Grafana](https://grafana.com/)是一款开源的可视化和分析软件。你可以使用它进行查询，绘制可视化图表，警报和浏览Prometheus或其他监视系统指标。
 
-### Option 1: Quick setup
+## 安装
 
-Prequisities:
+### 选项 1: 快速开始
+
+前提条件:
   * AWS App Mesh [Prometheus](https://github.com/aws/eks-charts/tree/master/stable/appmesh-prometheus)
 
-App Mesh provides a basic installation to setup Grafana quickly using Helm. To install the Grafana pre-configured to work with App Mesh, follow the instructions in [appmesh-Grafana](https://github.com/aws/eks-charts/blob/master/stable/appmesh-grafana/README.md) Helm charts.
+App Mesh提供了基本安装，可使用Helm快速设置Grafana。要安装可与App Mesh一起使用的预先配置为Grafana，请按照[appmesh-Grafana](https://github.com/aws/eks-charts/blob/master/stable/appmesh-grafana/README.md) Helm charts中的说明进行操作。
 
+### 选项 2: 使用已经存在的Grafana
 
-### Option 2: Existing Grafana deployment
-
-If you already have a Grafana setup and you're interested in using the Grafana dashboards provided by App Mesh, you can find the dashboards [here](https://github.com/aws/eks-charts/tree/master/stable/appmesh-grafana/dashboards)
+如果您已经安装了Grafana，并且对使用App Mesh提供的Grafana dashboard感兴趣，则可以在此处找到这些仪表板[here](https://github.com/aws/eks-charts/tree/master/stable/appmesh-grafana/dashboards)。
 
 ## Dashboards
 
-You can use Grafana to build your own dashboards using the available Prometheus metrics. App Mesh offers pre-configured dashboards for App Mesh Kubernetes Controller and mesh data plane.
+您可以使用Prometheus的监控数据来构建自己的Grafana dashboards。App Mesh为App Mesh Kubernetes Controller和Mesh数据平面提供了预先配置的仪表板。
 
-**Control Plane Dashboard**: provides overview of health of the App Mesh Kubernetes Controller
+**Control Plane Dashboard**: 展示App Mesh Kubernetes Controller的运行状况
 
-**Data Plane Dashboard**: provides overview of Envoy metrics and health
+**Data Plane Dashboard**: 展示Envoy监控指标和健康状况
 
-## Usage
+## 使用
 
-For the testing/demo (Option 1 installation), you may use port-forwarding to the Grafana endpoint:
+对于测试或演示环境（选项1安装），您可以使用端口转发到Grafana：
 
 ```
 kubectl -n appmesh-system port-forward svc/appmesh-grafana 3000:3000
 ```
 
-Here’s a view of a sample control plane dashboard:
+下图是一个示例控制平面仪表板的视图：
 
 ![Grafana App Mesh control plane dashboard](grafana-dashboard-0.png)
 
-Here’s a view of a sample data plane dashboard:
+下图是一个示例数据平面仪表板的视图：
 
 ![Grafana App Mesh data plane dashboard](grafana-dashboard-1.png)
 
-## Cleanup
+## 清除环境
 
 ```
 helm delete appmesh-grafana -n appmesh-system

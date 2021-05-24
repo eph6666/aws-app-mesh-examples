@@ -1,62 +1,63 @@
-## Overview
-This example shows how to manage HTTP/2 routes in App Mesh using Kubernetes deployments
+## 总览
+此示例展示如何使用Kubernetes Deployment 和 App Mesh管理HTTP/2路由。
 
-## Prerequisites
+## 前提条件
 1. [Walkthrough: App Mesh with EKS](../eks/)
 
-2. v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
+2. v1beta2 示例 manifest 需要 [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) 版本 [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). 运行下面的命令去检查你运行的controller版本.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
-You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
+你可以使用 v1beta1 示例 manifest，如果你 [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) 版本是 [v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
-3. Install Docker. It is needed to build the demo application images.
+3. 安装Docker，示例需要构建演示应用的Docker image。
 
-```
-## Setup
 
-1. Clone this repository and navigate to the walkthrough/howto-k8s-http2 folder, all commands will be ran from this location
-1. **Your** account id:
+## 配置
+
+1. 克隆此仓库，然后进入`walkthrough/howto-k8s-http2`文件夹，所有的命令都是在此文件夹下运行。
+2. **你的** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
-1. **Region** e.g. us-west-2
+3. **Region** e.g. us-west-2
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-1. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields, e.g.
+4. **(可选项) 指定 Envoy Image 版本** 如果要使用与[默认版本](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration)不同的Envoy 容器镜像，运行 `helm upgrade` 去覆盖 `sidecar.image.repository` 和 `sidecar.image.tag` 字段。
     ```
     helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sidecar.image.repository=840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy --set sidecar.image.tag=<VERSION>
     ```
-1. Deploy
+5. 部署
     ```.
     ./deploy.sh
-    ```   
-    
-1. Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
+    ```
+
+6. 请注意，示例应用程序使用go模块。如果在部署期间无法访问https://proxy.golang.org，则可以通过设置`GO_PROXY = direct`覆盖GOPROXY。
    ```
-   GO_PROXY=direct ./deploy.sh
-   ``` 
-       
-1. Set up [port forwarding](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/) to route requests from your local computer to the **client** pod. The local port is up to you but we will assume the local port is **7000** for this walkthrough.
+   GO_PROXY=direct
+   ./deploy.sh
+   ```
 
-    
-## HTTP/2 Routing
-1. In order to view app logs you must find your client pod by running the following passing your namespace name:
+7. 设置[端口转发（port forwarding）](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/)以将请求从本地路由到 *client* 容器。 本地端口由您决定，但本实验将假定本地端口为7000。
     ```
-    kubectl get pod -n <namespace>
-    ```  
-    
-1. Using the name of the client pod run the following command to tail the client app logs:
+    kubectl -n howto-k8s-http2 port-forward deployment/client 7000:8080
     ```
-    kubectl logs -f -n <namespace> <pod_name> app
+## HTTP/2 路由
+1. 为了查看应用程序日志，您必须通过运行以下命令找到您的 *client* Pod：
+    ```
+    kubectl get pod -n howto-k8s-http2
     ```
 
-1. Initially the state of your mesh is a client node with an even distribution to 3 color services (red, blue, and green) over HTTP/2. Prove this by running the following command a few times:
+2. 使用*client* Pod的名称，运行以下命令以查看*client*应用程序日志：
+    ```
+    kubectl logs -f -n howto-k8s-http2 <pod_name> app
+    ```
+
+3. 请求会通过HTTP/2均匀分布到3种*color*服务（red, blue, and green）。可以通过多次运行以下命令来证明这一点：
     ```
     curl localhost:7000/color
     ```
-   
-1. You can edit these specifications in the manifest.yaml.template [here](./manifest.yaml.template). Run ./deploy.sh after any changes you make. For instance you can remove one of the weighted targets and trigger the curl command above to confirm that color route no longer appears.
 
+4. 您可以在此处的[here](./manifest.yaml.template)中编辑这些配置。进行任何更改后，运行./deploy.sh。例如，您可以删除一个权重目标并再次触发上面的curl命令，可以看到不再显示这个颜色的返回。
